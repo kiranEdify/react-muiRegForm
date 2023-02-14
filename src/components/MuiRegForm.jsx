@@ -22,11 +22,35 @@ import {
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
+
+const validation = (state,data) => {
+  const isEmpty = {
+    fname: data.fname.length === 0,
+    lname: data.lname.length === 0,
+    email: data.email.length === 0,
+    pwd: data.pwd.length === 0,
+    dob: data.dob.length === 0,
+    gender: data.gender.length === 0,
+    country: data.country.length === 0,
+    program: data.program.length === 0,
+    textArea: data.textArea.length === 0,
+  };
+
+  return {
+    ...data,
+    showPassword:state.pwd,
+    isEmpty,
+  };
+};
+
 const reducer = (state, action) => {
   switch (action.type) {
     case "submit": {
       console.log(action.data);
-      return {...state}
+
+      return validation(state,action.data);
     }
     case "setGender": {
       return { ...state, gender: action.payload };
@@ -40,9 +64,9 @@ const reducer = (state, action) => {
     case "setShowPassword": {
       return { ...state, showPassword: action.payload };
     }
-    default:{
-      console.log('no dispatch found')
-      return {...state}
+    default: {
+      console.log("no dispatch found");
+      return { ...state };
     }
   }
 };
@@ -58,81 +82,107 @@ const initialState = {
   program: [],
   textArea: "",
   showPassword: false,
+  isEmpty: {},
 };
 
 const MuiRegForm = () => {
-  // const [gender, setGender] = useState("");
-  // const [country, setCountry] = useState([]);
-  // const [showPassword, setShowPassword] = useState(false);
-  // const [program, setProgram] = useState([]);
-
-  const [isEmpty, setIsEmpty] = useState({});
-
   const [state, dispatch] = useReducer(reducer, initialState);
-  // console.log({ state });
 
-  const pwdValidatorMsg = () => {
+  const pwdValidatorMsg = (pwd) => {
+    // console.log({ state, pwd });
+    if (!pwd) return "";
+    let spChars = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/;
+    let num = /[0-9]/;
+    let capital = /[A-Z]/;
+
+    const msg = [
+      "Special Characters Required",
+      "Numbers required",
+      "Capitals required",
+      "Min 8 characters Required",
+    ];
+
     return (
       <>
-        <h2>hello</h2>
+        {spChars.test(pwd) ? (
+          <>
+            <CheckCircleIcon sx={{ color: "green" }} />
+            {msg[0]}
+          </>
+        ) : (
+          <>
+            <CancelIcon sx={{ color: "red" }} />
+            {msg[0]}
+          </>
+        )}
+        <br />
+        {num.test(pwd) ? (
+          <>
+            <CheckCircleIcon sx={{ color: "green" }} />
+            {msg[1]}
+          </>
+        ) : (
+          <>
+            <CancelIcon sx={{ color: "red" }} />
+            {msg[1]}
+          </>
+        )}
+        <br />
+        {capital.test(pwd) ? (
+          <>
+            <CheckCircleIcon sx={{ color: "green" }} />
+            {msg[2]}
+          </>
+        ) : (
+          <>
+            <CancelIcon sx={{ color: "red" }} />
+            {msg[2]}
+          </>
+        )}
+        <br />
+        {pwd.length >= 8 ? (
+          <>
+            <CheckCircleIcon sx={{ color: "green" }} />
+            {msg[3]}
+          </>
+        ) : (
+          <>
+            <CancelIcon sx={{ color: "red" }} />
+            {msg[3]}
+          </>
+        )}
       </>
     );
   };
 
   const selectHandler = (e) => {
-    // setProgram(e.target.value);
     dispatch({ type: "setProgram", payload: e.target.value });
   };
-  // console.log(program);
 
   const showPasswordHandler = () => {
-    // setShowPassword((show) => !show);
     dispatch({ type: "setShowPassword", payload: !state.showPassword });
   };
 
-  // console.log({ gender, country });
-
   const radioHandler = (e) => {
-    // setGender(e.target.value);
     dispatch({ type: "setGender", payload: e.target.value });
   };
 
   const checkBoxHandler = (event) => {
     const index = state.country.indexOf(event.target.value);
     if (index === -1) {
-      // setCountry([...country, event.target.value]);
       dispatch({
         type: "setCountry",
         payload: [...state.country, event.target.value],
       });
     } else {
-      // setCountry(country.filter((checkbox) => checkbox != event.target.value));
       dispatch({
         type: "setCountry",
-        payload: [
-          state.country.filter((checkbox) => checkbox !== event.target.value),
-        ],
+        payload: state.country.filter(
+          (checkbox) => checkbox !== event.target.value
+        ),
       });
     }
   };
-
-  // const submitHandler = (e) => {
-  //   e.preventDefault();
-  //   const isEmpty = {
-  //     fname: e.target.fname.value.length === 0,
-  //     lname: e.target.lname.value.length === 0,
-  //     email: e.target.email.value.length === 0,
-  //     pwd: e.target.password.value.length === 0,
-  //     dob: e.target.dob.value.length === 0,
-  //     gender: gender.length === 0,
-  //     country: country.length === 0,
-  //     program: program.length === 0,
-  //   };
-  //   setIsEmpty({ ...isEmpty });
-
-  //   console.log(e, isEmpty);
-
-  // };
 
   const submitHandler = (e) => {
     e.preventDefault();
@@ -148,9 +198,8 @@ const MuiRegForm = () => {
         country: state.country,
         program: state.program,
         textArea: e.target.textArea.value,
-      }
+      },
     });
-    
   };
 
   return (
@@ -172,8 +221,8 @@ const MuiRegForm = () => {
                 label="First Name"
                 variant="filled"
                 name="fname"
-                error={isEmpty?.fname}
-                helperText={isEmpty?.fname ? "*First Name required" : ""}
+                error={state?.isEmpty.fname}
+                helperText={state?.isEmpty.fname ? "*First Name required" : ""}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -182,15 +231,15 @@ const MuiRegForm = () => {
                 label="Last Name"
                 variant="filled"
                 name="lname"
-                error={isEmpty?.lname}
-                helperText={isEmpty?.lname ? "*Last Name required" : ""}
+                error={state?.isEmpty.lname}
+                helperText={state?.isEmpty.lname ? "*Last Name required" : ""}
               />
             </Grid>
 
             <Grid item xs={12}>
               <TextField
-                error={isEmpty?.email}
-                helperText={isEmpty?.email ? "*email required" : ""}
+                error={state?.isEmpty.email}
+                helperText={state?.isEmpty.email ? "*email required" : ""}
                 fullWidth
                 label="Email"
                 variant="filled"
@@ -202,8 +251,12 @@ const MuiRegForm = () => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                error={isEmpty?.pwd}
-                helperText={isEmpty?.pwd ? "*Password Required" : ""}
+                error={state?.isEmpty.pwd}
+                helperText={
+                  state?.isEmpty.pwd
+                    ? "*Password Required"
+                    : pwdValidatorMsg(state.pwd)
+                }
                 name="password"
                 type={state.showPassword ? "text" : "password"}
                 label="password"
@@ -239,7 +292,7 @@ const MuiRegForm = () => {
             </Grid>
 
             <Grid item xs={12}>
-              <FormControl error={isEmpty?.gender}>
+              <FormControl error={state?.isEmpty.gender}>
                 <FormLabel id="demo-radio-buttons-group-label">
                   Gender
                 </FormLabel>
@@ -265,14 +318,14 @@ const MuiRegForm = () => {
                     label="Other"
                   />
                 </RadioGroup>
-                {isEmpty?.gender && (
+                {state?.isEmpty.gender && (
                   <FormHelperText>*gender required</FormHelperText>
                 )}
               </FormControl>
             </Grid>
 
             <Grid item xs={12}>
-              <FormControl error={isEmpty?.country}>
+              <FormControl error={state?.isEmpty.country}>
                 <FormLabel>country</FormLabel>
                 <FormGroup row>
                   <FormControlLabel
@@ -298,7 +351,7 @@ const MuiRegForm = () => {
                     label="others"
                   />
                 </FormGroup>
-                {isEmpty?.country && (
+                {state?.isEmpty.country && (
                   <FormHelperText>*country required</FormHelperText>
                 )}
               </FormControl>
